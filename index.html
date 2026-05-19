@@ -332,9 +332,7 @@
       gap: 8px;
     }
 
-    @media (max-width: 480px) {
-      .planos { grid-template-columns: 1fr; }
-    }
+    /* Cards de plano: sempre 3 colunas (ajustes finos nos breakpoints mobile abaixo) */
 
     .plano {
       background: var(--bg);
@@ -1899,11 +1897,16 @@
       .calc { padding: 18px; gap: 18px; }
       .calc-inputs h3, .calc-result h3 { font-size: 12px; margin-bottom: 14px; }
 
-      .planos { gap: 6px; }
-      .plano { padding: 12px 6px; }
-      .plano-nome { font-size: 10px; }
-      .plano-taxa { font-size: 19px; }
-      .plano-period { font-size: 10px; }
+      /* Cards de plano permanecem 3 colunas em mobile */
+      .planos { gap: 5px; grid-template-columns: repeat(3, 1fr); }
+      .plano { padding: 10px 4px; }
+      .plano-nome { font-size: 9.5px; letter-spacing: 0.02em; }
+      .plano-taxa { font-size: 17px; }
+      .plano-period { font-size: 9px; }
+
+      /* Resultado e gráfico VÃO PRO TOPO em mobile */
+      .calc { display: flex; flex-direction: column; }
+      .calc-result { order: -1; }
 
       .field { margin-bottom: 14px; }
       .field label { font-size: 13px; }
@@ -2017,6 +2020,13 @@
 
       .calc-inputs .actions { flex-direction: column; }
       .actions .btn { width: 100%; justify-content: center; }
+
+      /* Cards de plano: mantém 3 colunas mesmo em telas bem pequenas */
+      .planos { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+      .plano { padding: 9px 3px; }
+      .plano-nome { font-size: 8.5px; letter-spacing: 0.01em; }
+      .plano-taxa { font-size: 15px; }
+      .plano-period { font-size: 8px; }
 
       .nivel-row { grid-template-columns: 1fr; gap: 6px; }
       .nivel-row .nivel-label { font-size: 13px; }
