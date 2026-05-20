@@ -456,6 +456,38 @@
       display: none;
     }
 
+    .field-hint {
+      display: block;
+      font-size: 11.5px;
+      color: var(--text-soft);
+      margin-top: 5px;
+      font-weight: 500;
+    }
+
+    .ganho-diario {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--success-soft);
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+    }
+
+    .ganho-diario .label {
+      font-size: 13px;
+      color: var(--text-soft);
+      font-weight: 500;
+    }
+
+    .ganho-diario .value {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--success);
+      font-feature-settings: 'tnum';
+      letter-spacing: -0.01em;
+    }
+
     .calc-result {
       background: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
       border-radius: var(--radius);
@@ -2094,6 +2126,7 @@
                 <span class="input-prefix">R$</span>
                 <input type="text" id="valor-inicial" inputmode="decimal" value="1.000,00" />
               </div>
+              <span class="field-hint" id="valor-min-hint">Mínimo do plano: R$ 60,00</span>
             </div>
 
             <div class="field">
@@ -2180,6 +2213,11 @@
                 <div class="label">Total em juros</div>
                 <div class="value" id="result-juros">R$ 0,00</div>
               </div>
+            </div>
+
+            <div class="ganho-diario">
+              <span class="label">Ganho por dia (estimado)</span>
+              <span class="value" id="result-ganho-dia">R$ 0,00</span>
             </div>
 
             <button class="table-toggle" id="table-toggle" aria-expanded="false">
@@ -2274,10 +2312,17 @@
       avancado: 0.33,
     };
 
+    const PLANO_MIN = {
+      iniciante: 60,
+      intermediario: 500,
+      avancado: 2000,
+    };
+
     let planoAtivo = 'iniciante';
 
     const els = {
       valorInicial: document.getElementById('valor-inicial'),
+      valorMinHint: document.getElementById('valor-min-hint'),
       aporte: document.getElementById('aporte'),
       aporteToggle: document.getElementById('aporte-toggle'),
       aporteField: document.getElementById('aporte-field'),
@@ -2287,6 +2332,7 @@
       resultFinal: document.getElementById('result-final'),
       resultInvestido: document.getElementById('result-investido'),
       resultJuros: document.getElementById('result-juros'),
+      resultGanhoDia: document.getElementById('result-ganho-dia'),
       tableBody: document.getElementById('table-body'),
       tableToggle: document.getElementById('table-toggle'),
       tableWrap: document.getElementById('table-wrap'),
@@ -2376,6 +2422,8 @@
       const totalInvestido = valorInicial + aporte * tempoMeses;
       const valorFinal = saldo;
       const totalJuros = valorFinal - totalInvestido;
+      // Ganho diário estimado: taxa mensal dividida em 30 dias, sobre o valor inicial
+      const ganhoDia = valorInicial * (taxaMensal / 30);
 
       return {
         valorInicial,
@@ -2389,6 +2437,7 @@
         totalInvestido,
         valorFinal,
         totalJuros,
+        ganhoDia,
         linhas,
       };
     }
@@ -2530,6 +2579,10 @@
       els.resultFinal.textContent = fmtMoeda(r.valorFinal);
       els.resultInvestido.textContent = fmtMoeda(r.totalInvestido);
       els.resultJuros.textContent = fmtMoeda(r.totalJuros);
+      els.resultGanhoDia.textContent = fmtMoeda(r.ganhoDia);
+      if (els.valorMinHint) {
+        els.valorMinHint.textContent = 'Mínimo do plano: ' + fmtMoeda(PLANO_MIN[planoAtivo]);
+      }
       renderChart(r.linhas, r.valorInicial);
       renderTabela(r.linhas);
       salvarLocal();
@@ -2656,9 +2709,30 @@
           b.classList.toggle('active', ativo);
           b.setAttribute('aria-checked', String(ativo));
         });
+        // Garante o valor mínimo do plano selecionado
+        const min = PLANO_MIN[planoAtivo];
+        if (parseNumero(els.valorInicial.value) < min) {
+          els.valorInicial.value = min.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
+        }
         atualizar();
         if (typeof renderPlanosExtras === 'function') renderPlanosExtras();
       });
+    });
+
+    // Ao sair do campo, força o mínimo do plano
+    els.valorInicial.addEventListener('blur', () => {
+      const min = PLANO_MIN[planoAtivo];
+      if (parseNumero(els.valorInicial.value) < min) {
+        els.valorInicial.value = min.toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        atualizar();
+        toast('Valor mínimo do plano: ' + fmtMoeda(min));
+      }
     });
 
     els.aporteToggle.addEventListener('change', () => {
@@ -2843,7 +2917,7 @@
       planosExtras.push({
         id,
         plano: disp[0],
-        valorInicial: 1000,
+        valorInicial: PLANO_MIN[disp[0]],
         aporte: 300,
         aporteAtivo: true,
         tempo: 6,
@@ -2905,6 +2979,10 @@
         const disp = planosDisponiveis(id);
         if (novo !== extra.plano && !disp.includes(novo)) return;
         extra.plano = novo;
+        // Garante o valor mínimo do plano selecionado
+        if (extra.valorInicial < PLANO_MIN[novo]) {
+          extra.valorInicial = PLANO_MIN[novo];
+        }
         renderPlanosExtras();
         recalcularSomatorio();
       }
