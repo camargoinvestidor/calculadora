@@ -529,6 +529,15 @@
       border-radius: var(--radius-sm);
     }
 
+    .ganho-dias-wrap tr.dia-recompoe {
+      background: var(--success-soft);
+    }
+
+    .ganho-dias-wrap tr.dia-recompoe td {
+      font-weight: 700;
+      color: var(--text);
+    }
+
     .calc-result {
       background: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
       border-radius: var(--radius);
@@ -2638,16 +2647,24 @@
     }
 
     function renderGanhoDias(valorInicial, taxaMensal) {
-      const taxaDiaria = taxaMensal / 30;
+      // O reinvestimento (composição) acontece a cada 15 dias.
+      // Dentro de cada quinzena o ganho diário é LINEAR sobre a base da quinzena.
+      const taxaQuinzenal = taxaMensal / 2;
+      const ganhoDiarioRate = taxaQuinzenal / 15;
+      let baseQuinzena = valorInicial;
       let saldo = valorInicial;
       let html = '';
       for (let dia = 1; dia <= 30; dia++) {
-        const ganho = saldo * taxaDiaria;
+        const ganho = baseQuinzena * ganhoDiarioRate;
         saldo += ganho;
+        const fimQuinzena = dia === 15 || dia === 30;
         html +=
-          '<tr><td>Dia ' + dia + '</td>' +
+          '<tr' + (fimQuinzena ? ' class="dia-recompoe"' : '') + '>' +
+          '<td>Dia ' + dia + (fimQuinzena ? ' · recompõe' : '') + '</td>' +
           '<td class="num">' + fmtMoeda(ganho) + '</td>' +
           '<td class="num">' + fmtMoeda(saldo) + '</td></tr>';
+        // Ao fim da 1ª quinzena, a base passa a ser o saldo acumulado (composição)
+        if (dia === 15) baseQuinzena = saldo;
       }
       els.ganhoDiasBody.innerHTML = html;
     }
