@@ -389,6 +389,32 @@
       font-weight: 500;
     }
 
+    .plano-duracao {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid var(--border-soft);
+      width: 100%;
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+
+    .plano.active .plano-duracao {
+      border-top-color: rgba(79, 70, 229, 0.2);
+      color: var(--primary);
+    }
+
+    .juros-hint {
+      display: block;
+      font-size: 11.5px;
+      color: var(--text-soft);
+      margin: -8px 0 14px;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
     /* Toggle switch */
     .field-toggle {
       display: flex;
@@ -2186,16 +2212,19 @@
                   <span class="plano-nome">Iniciante</span>
                   <span class="plano-taxa">27%</span>
                   <span class="plano-period">ao mês</span>
+                  <span class="plano-duracao">2 meses</span>
                 </button>
                 <button type="button" class="plano" data-plano="intermediario" role="radio" aria-checked="false">
                   <span class="plano-nome">Intermediário</span>
                   <span class="plano-taxa">30%</span>
                   <span class="plano-period">ao mês</span>
+                  <span class="plano-duracao">4 meses</span>
                 </button>
                 <button type="button" class="plano" data-plano="avancado" role="radio" aria-checked="false">
                   <span class="plano-nome">Avançado</span>
                   <span class="plano-taxa">33%</span>
                   <span class="plano-period">ao mês</span>
+                  <span class="plano-duracao">12 meses</span>
                 </button>
               </div>
             </div>
@@ -2226,6 +2255,15 @@
                 </select>
               </div>
             </div>
+
+            <div class="field-toggle juros-toggle-box">
+              <label class="switch" for="juros-toggle">
+                <input type="checkbox" id="juros-toggle" checked />
+                <span class="slider"></span>
+              </label>
+              <label class="switch-label" for="juros-toggle">Reinvestir com juros compostos</label>
+            </div>
+            <span class="juros-hint" id="juros-hint">Ativado: o lucro é reinvestido a cada 15 dias.</span>
 
             <div class="actions">
               <button class="btn" id="btn-salvar">
@@ -2372,7 +2410,7 @@
   <script>
     'use strict';
 
-    const STORAGE_KEY = 'jc-calc-v3';
+    const STORAGE_KEY = 'jc-calc-v4';
 
     const PLANOS = {
       iniciante: 0.27,
@@ -2394,6 +2432,8 @@
       aporte: document.getElementById('aporte'),
       aporteToggle: document.getElementById('aporte-toggle'),
       aporteField: document.getElementById('aporte-field'),
+      jurosToggle: document.getElementById('juros-toggle'),
+      jurosHint: document.getElementById('juros-hint'),
       planos: document.querySelectorAll('.plano'),
       tempo: document.getElementById('tempo'),
       tempoUnidade: document.getElementById('tempo-unidade'),
@@ -2466,22 +2506,31 @@
       const tempoMeses = tempoUnidade === 'anos' ? Math.round(tempo * 12) : Math.round(tempo);
       const taxaMensal = PLANOS[planoAtivo];
       const taxaQuinzenal = taxaMensal / 2;
+      const composto = els.jurosToggle.checked;
 
       let saldo = valorInicial;
+      let capitalSimples = valorInicial; // base que rende no modo simples (não acumula juros)
       const linhas = [];
       let totalJurosAcum = 0;
 
       for (let mes = 1; mes <= tempoMeses; mes++) {
-        // 1ª quinzena (reinvestimento dia 15)
-        const juros1 = saldo * taxaQuinzenal;
-        saldo += juros1;
-        // 2ª quinzena (reinvestimento fim do mês)
-        const juros2 = saldo * taxaQuinzenal;
-        saldo += juros2;
-        // Aporte mensal entra no fim do mês
-        saldo += aporte;
+        let jurosMes;
+        if (composto) {
+          // Composição quinzenal — reinveste o lucro a cada 15 dias
+          const juros1 = saldo * taxaQuinzenal;
+          saldo += juros1;
+          const juros2 = saldo * taxaQuinzenal;
+          saldo += juros2;
+          saldo += aporte;
+          jurosMes = juros1 + juros2;
+        } else {
+          // Juros simples — lucro fixo, NÃO reinveste
+          jurosMes = capitalSimples * taxaMensal;
+          saldo += jurosMes;
+          saldo += aporte;
+          capitalSimples += aporte; // só o aporte passa a render
+        }
 
-        const jurosMes = juros1 + juros2;
         totalJurosAcum += jurosMes;
         linhas.push({
           mes,
@@ -2503,6 +2552,7 @@
         aporteAtivo,
         plano: planoAtivo,
         taxaMensal,
+        composto,
         tempo,
         tempoUnidade,
         tempoMeses,
@@ -2646,25 +2696,35 @@
       els.tableBody.appendChild(frag);
     }
 
-    function renderGanhoDias(valorInicial, taxaMensal) {
-      // O reinvestimento (composição) acontece a cada 15 dias.
-      // Dentro de cada quinzena o ganho diário é LINEAR sobre a base da quinzena.
-      const taxaQuinzenal = taxaMensal / 2;
-      const ganhoDiarioRate = taxaQuinzenal / 15;
-      let baseQuinzena = valorInicial;
-      let saldo = valorInicial;
+    function renderGanhoDias(valorInicial, taxaMensal, composto) {
       let html = '';
-      for (let dia = 1; dia <= 30; dia++) {
-        const ganho = baseQuinzena * ganhoDiarioRate;
-        saldo += ganho;
-        const fimQuinzena = dia === 15 || dia === 30;
-        html +=
-          '<tr' + (fimQuinzena ? ' class="dia-recompoe"' : '') + '>' +
-          '<td>Dia ' + dia + (fimQuinzena ? ' · recompõe' : '') + '</td>' +
-          '<td class="num">' + fmtMoeda(ganho) + '</td>' +
-          '<td class="num">' + fmtMoeda(saldo) + '</td></tr>';
-        // Ao fim da 1ª quinzena, a base passa a ser o saldo acumulado (composição)
-        if (dia === 15) baseQuinzena = saldo;
+      let saldo = valorInicial;
+      if (composto) {
+        // Composição quinzenal: ganho linear na quinzena, recompõe a cada 15 dias
+        const taxaQuinzenal = taxaMensal / 2;
+        const ganhoDiarioRate = taxaQuinzenal / 15;
+        let baseQuinzena = valorInicial;
+        for (let dia = 1; dia <= 30; dia++) {
+          const ganho = baseQuinzena * ganhoDiarioRate;
+          saldo += ganho;
+          const fimQuinzena = dia === 15 || dia === 30;
+          html +=
+            '<tr' + (fimQuinzena ? ' class="dia-recompoe"' : '') + '>' +
+            '<td>Dia ' + dia + (fimQuinzena ? ' · recompõe' : '') + '</td>' +
+            '<td class="num">' + fmtMoeda(ganho) + '</td>' +
+            '<td class="num">' + fmtMoeda(saldo) + '</td></tr>';
+          if (dia === 15) baseQuinzena = saldo;
+        }
+      } else {
+        // Juros simples: ganho diário fixo o tempo todo (não recompõe)
+        const ganhoDiario = valorInicial * (taxaMensal / 30);
+        for (let dia = 1; dia <= 30; dia++) {
+          saldo += ganhoDiario;
+          html +=
+            '<tr><td>Dia ' + dia + '</td>' +
+            '<td class="num">' + fmtMoeda(ganhoDiario) + '</td>' +
+            '<td class="num">' + fmtMoeda(saldo) + '</td></tr>';
+        }
       }
       els.ganhoDiasBody.innerHTML = html;
     }
@@ -2678,9 +2738,14 @@
       if (els.valorMinHint) {
         els.valorMinHint.textContent = 'Mínimo do plano: ' + fmtMoeda(PLANO_MIN[planoAtivo]);
       }
+      if (els.jurosHint) {
+        els.jurosHint.textContent = r.composto
+          ? 'Ativado: o lucro é reinvestido a cada 15 dias (juros compostos).'
+          : 'Desativado: lucro fixo, sem reinvestir (juros simples).';
+      }
       renderChart(r.linhas, r.valorInicial);
       renderTabela(r.linhas);
-      renderGanhoDias(r.valorInicial, r.taxaMensal);
+      renderGanhoDias(r.valorInicial, r.taxaMensal, r.composto);
       salvarLocal();
       if (typeof recalcularSomatorio === 'function') recalcularSomatorio();
     }
@@ -2691,6 +2756,7 @@
           valorInicial: els.valorInicial.value,
           aporte: els.aporte.value,
           aporteAtivo: els.aporteToggle.checked,
+          jurosCompostos: els.jurosToggle.checked,
           plano: planoAtivo,
           tempo: els.tempo.value,
           tempoUnidade: els.tempoUnidade.value,
@@ -2705,6 +2771,9 @@
       if (d.aporteAtivo != null) {
         els.aporteToggle.checked = !!d.aporteAtivo;
         els.aporteField.classList.toggle('hidden', !els.aporteToggle.checked);
+      }
+      if (d.jurosCompostos != null) {
+        els.jurosToggle.checked = !!d.jurosCompostos;
       }
       if (d.plano != null && PLANOS[d.plano] != null) {
         planoAtivo = d.plano;
@@ -2836,6 +2905,8 @@
       atualizar();
     });
 
+    els.jurosToggle.addEventListener('change', atualizar);
+
     els.tableToggle.addEventListener('click', () => {
       const isOpen = els.tableWrap.classList.toggle('open');
       els.tableToggle.classList.toggle('open', isOpen);
@@ -2881,12 +2952,20 @@
       const tempoMeses = params.tempoUnidade === 'anos'
         ? Math.round(params.tempo * 12)
         : Math.round(params.tempo);
+      const composto = els.jurosToggle.checked;
 
       let saldo = params.valorInicial;
+      let capitalSimples = params.valorInicial;
       for (let mes = 1; mes <= tempoMeses; mes++) {
-        saldo += saldo * taxaQuinzenal; // 1ª quinzena
-        saldo += saldo * taxaQuinzenal; // 2ª quinzena
-        saldo += aporte;
+        if (composto) {
+          saldo += saldo * taxaQuinzenal; // 1ª quinzena
+          saldo += saldo * taxaQuinzenal; // 2ª quinzena
+          saldo += aporte;
+        } else {
+          saldo += capitalSimples * taxaMensal; // juros simples fixo
+          saldo += aporte;
+          capitalSimples += aporte;
+        }
       }
 
       const totalInvestido = params.valorInicial + aporte * tempoMeses;
