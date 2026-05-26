@@ -229,7 +229,11 @@
     .calc {
       display: grid;
       grid-template-columns: 1fr 1.2fr;
-      gap: 32px;
+      grid-template-areas:
+        "inputs result"
+        "table result";
+      gap: 16px 32px;
+      align-items: start;
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -237,9 +241,13 @@
       box-shadow: var(--shadow-md);
     }
 
+    .calc-inputs { grid-area: inputs; }
+    .calc-result { grid-area: result; }
+
     @media (max-width: 820px) {
       .calc {
         grid-template-columns: 1fr;
+        grid-template-areas: none;
         padding: 22px;
         gap: 24px;
       }
@@ -679,11 +687,29 @@
     }
 
     .table-wrap-full {
-      grid-column: 1 / -1;
+      grid-area: table;
+      margin-top: 0;
     }
 
     .table-wrap-full.open {
       max-height: 720px;
+      margin-top: 0;
+    }
+
+    /* Quando tem mais de 6 meses, ocupa largura total */
+    .table-wrap-full.full-row {
+      grid-area: unset;
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    @media (max-width: 820px) {
+      .table-wrap-full,
+      .table-wrap-full.full-row {
+        grid-area: unset;
+        grid-column: auto;
+        grid-row: auto;
+      }
     }
 
     .tabela-cols {
@@ -2762,6 +2788,7 @@
       els.tableBody1.innerHTML = html1;
       els.tableBody2.innerHTML = html2;
       els.tabelaCols.classList.toggle('split', split);
+      els.tableWrap.classList.toggle('full-row', split);
     }
 
     function renderGanhoDias(valorInicial, taxaMensal, composto) {
