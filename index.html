@@ -229,10 +229,7 @@
     .calc {
       display: grid;
       grid-template-columns: 1fr 1.2fr;
-      grid-template-areas:
-        "inputs result"
-        "table result";
-      gap: 12px 24px;
+      gap: 24px;
       align-items: start;
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -241,13 +238,9 @@
       box-shadow: var(--shadow-md);
     }
 
-    .calc-inputs { grid-area: inputs; }
-    .calc-result { grid-area: result; }
-
     @media (max-width: 820px) {
       .calc {
         grid-template-columns: 1fr;
-        grid-template-areas: none;
         padding: 22px;
         gap: 24px;
       }
@@ -679,39 +672,14 @@
     }
 
     .table-wrap.open {
-      max-height: 480px;
+      max-height: 420px;
       overflow-y: auto;
-      margin-top: 12px;
+      margin-top: 8px;
       border: 1px solid var(--border-soft);
       border-radius: var(--radius-sm);
     }
 
-    .table-wrap-full {
-      grid-area: table;
-      margin-top: 0;
-    }
-
-    .table-wrap-full.open {
-      max-height: 340px;
-      overflow-y: auto;
-      margin-top: 0;
-    }
-
-    /* Quando tem mais de 6 meses, ocupa largura total */
-    .table-wrap-full.full-row {
-      grid-area: unset;
-      grid-column: 1 / -1;
-      grid-row: 2;
-    }
-
-    @media (max-width: 820px) {
-      .table-wrap-full,
-      .table-wrap-full.full-row {
-        grid-area: unset;
-        grid-column: auto;
-        grid-row: auto;
-      }
-    }
+    /* Tabela dentro do calc-result (lado direito), com scroll interno */
 
     .tabela-cols {
       display: grid;
@@ -763,10 +731,10 @@
 
     th {
       text-align: left;
-      padding: 7px 10px;
+      padding: 6px 8px;
       font-weight: 600;
       color: var(--text-soft);
-      font-size: 11px;
+      font-size: 10.5px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       border-bottom: 1px solid var(--border);
@@ -779,10 +747,10 @@
     }
 
     td {
-      padding: 6px 10px;
+      padding: 5px 8px;
       border-bottom: 1px solid var(--border-soft);
       color: var(--text);
-      font-size: 12.5px;
+      font-size: 11.5px;
     }
 
     tbody tr:last-child td {
@@ -2403,32 +2371,32 @@
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </button>
-          </div>
 
-          <div class="table-wrap table-wrap-full" id="table-wrap" aria-hidden="true">
-            <div class="tabela-cols" id="tabela-cols">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Mês</th>
-                    <th class="num">Aporte</th>
-                    <th class="num">Juros</th>
-                    <th class="num">Saldo</th>
-                  </tr>
-                </thead>
-                <tbody id="table-body-1"></tbody>
-              </table>
-              <table class="table-col-2">
-                <thead>
-                  <tr>
-                    <th>Mês</th>
-                    <th class="num">Aporte</th>
-                    <th class="num">Juros</th>
-                    <th class="num">Saldo</th>
-                  </tr>
-                </thead>
-                <tbody id="table-body-2"></tbody>
-              </table>
+            <div class="table-wrap" id="table-wrap" aria-hidden="true">
+              <div class="tabela-cols" id="tabela-cols">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Mês</th>
+                      <th class="num">Aporte</th>
+                      <th class="num">Juros</th>
+                      <th class="num">Saldo</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-1"></tbody>
+                </table>
+                <table class="table-col-2">
+                  <thead>
+                    <tr>
+                      <th>Mês</th>
+                      <th class="num">Aporte</th>
+                      <th class="num">Juros</th>
+                      <th class="num">Saldo</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-2"></tbody>
+                </table>
+              </div>
             </div>
           </div>
 
