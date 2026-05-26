@@ -2768,29 +2768,20 @@
     }
 
     function renderTabela(linhas) {
-      const total = linhas.length;
-      const split = total > 6;
-      const meio = split ? Math.ceil(total / 2) : total;
-
-      let html1 = '';
-      let html2 = '';
-
-      linhas.forEach((l, i) => {
-        const row =
+      let html = '';
+      linhas.forEach((l) => {
+        html +=
           '<tr>' +
           '<td>' + l.mes + '</td>' +
           '<td class="num">' + fmtMoeda(l.aporte) + '</td>' +
           '<td class="num">' + fmtMoeda(l.juros) + '</td>' +
           '<td class="num">' + fmtMoeda(l.saldo) + '</td>' +
           '</tr>';
-        if (i < meio) html1 += row;
-        else html2 += row;
       });
-
-      els.tableBody1.innerHTML = html1;
-      els.tableBody2.innerHTML = html2;
-      els.tabelaCols.classList.toggle('split', split);
-      els.tableWrap.classList.toggle('full-row', split);
+      els.tableBody1.innerHTML = html;
+      els.tableBody2.innerHTML = '';
+      els.tabelaCols.classList.remove('split');
+      els.tableWrap.classList.remove('full-row');
     }
 
     function renderGanhoDias(valorInicial, taxaMensal, composto) {
