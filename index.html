@@ -678,6 +678,49 @@
       border-radius: var(--radius-sm);
     }
 
+    .table-wrap-full {
+      grid-column: 1 / -1;
+    }
+
+    .table-wrap-full.open {
+      max-height: 720px;
+    }
+
+    .tabela-cols {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+
+    .tabela-cols .table-col-2 {
+      display: none;
+    }
+
+    .tabela-cols.split {
+      grid-template-columns: 1fr 1fr;
+      gap: 0 1px;
+      background: var(--border-soft);
+    }
+
+    .tabela-cols.split .table-col-2 {
+      display: table;
+    }
+
+    .tabela-cols table {
+      background: var(--bg);
+    }
+
+    @media (max-width: 720px) {
+      .tabela-cols.split {
+        grid-template-columns: 1fr;
+        gap: 0;
+        background: transparent;
+      }
+      .tabela-cols.split .table-col-2 {
+        border-top: 1px solid var(--border-soft);
+      }
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -2332,8 +2375,10 @@
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </button>
+          </div>
 
-            <div class="table-wrap" id="table-wrap" aria-hidden="true">
+          <div class="table-wrap table-wrap-full" id="table-wrap" aria-hidden="true">
+            <div class="tabela-cols" id="tabela-cols">
               <table>
                 <thead>
                   <tr>
@@ -2343,7 +2388,18 @@
                     <th class="num">Saldo</th>
                   </tr>
                 </thead>
-                <tbody id="table-body"></tbody>
+                <tbody id="table-body-1"></tbody>
+              </table>
+              <table class="table-col-2">
+                <thead>
+                  <tr>
+                    <th>Mês</th>
+                    <th class="num">Aporte</th>
+                    <th class="num">Juros</th>
+                    <th class="num">Saldo</th>
+                  </tr>
+                </thead>
+                <tbody id="table-body-2"></tbody>
               </table>
             </div>
           </div>
@@ -2444,7 +2500,9 @@
       ganhoToggle: document.getElementById('ganho-toggle'),
       ganhoDiasWrap: document.getElementById('ganho-dias-wrap'),
       ganhoDiasBody: document.getElementById('ganho-dias-body'),
-      tableBody: document.getElementById('table-body'),
+      tableBody1: document.getElementById('table-body-1'),
+      tableBody2: document.getElementById('table-body-2'),
+      tabelaCols: document.getElementById('tabela-cols'),
       tableToggle: document.getElementById('table-toggle'),
       tableWrap: document.getElementById('table-wrap'),
       btnSalvar: document.getElementById('btn-salvar'),
@@ -2682,18 +2740,28 @@
     }
 
     function renderTabela(linhas) {
-      const frag = document.createDocumentFragment();
-      linhas.forEach((l) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML =
+      const total = linhas.length;
+      const split = total > 6;
+      const meio = split ? Math.ceil(total / 2) : total;
+
+      let html1 = '';
+      let html2 = '';
+
+      linhas.forEach((l, i) => {
+        const row =
+          '<tr>' +
           '<td>' + l.mes + '</td>' +
           '<td class="num">' + fmtMoeda(l.aporte) + '</td>' +
           '<td class="num">' + fmtMoeda(l.juros) + '</td>' +
-          '<td class="num">' + fmtMoeda(l.saldo) + '</td>';
-        frag.appendChild(tr);
+          '<td class="num">' + fmtMoeda(l.saldo) + '</td>' +
+          '</tr>';
+        if (i < meio) html1 += row;
+        else html2 += row;
       });
-      els.tableBody.innerHTML = '';
-      els.tableBody.appendChild(frag);
+
+      els.tableBody1.innerHTML = html1;
+      els.tableBody2.innerHTML = html2;
+      els.tabelaCols.classList.toggle('split', split);
     }
 
     function renderGanhoDias(valorInicial, taxaMensal, composto) {
